@@ -16,6 +16,7 @@ class Page(HTMLParser):
         super().__init__(convert_charrefs=True)
         self.ids = set()
         self.references = []
+        self.id_references = []
         self.h1_count = 0
         self.filename = filename
         self.feed((ROOT / filename).read_text(encoding="utf-8"))
@@ -25,6 +26,8 @@ class Page(HTMLParser):
         if "id" in attrs:
             assert attrs["id"] not in self.ids, f"{self.filename}: duplicate ID {attrs['id']}"
             self.ids.add(attrs["id"])
+        for attribute in ("aria-controls", "aria-labelledby", "aria-describedby", "for"):
+            self.id_references.extend(attrs.get(attribute, "").split())
         if tag == "h1":
             self.h1_count += 1
         if tag == "img":
@@ -43,6 +46,8 @@ def check(base_url=None):
     resources = set(PAGES)
     for filename, page in pages.items():
         assert page.h1_count == 1, f"{filename}: expected exactly one H1"
+        for identifier in page.id_references:
+            assert identifier in page.ids, f"{filename}: missing label or control target {identifier}"
         for reference in page.references:
             url = urlsplit(reference)
             if url.scheme or url.netloc:

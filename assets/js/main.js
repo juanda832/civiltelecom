@@ -3,7 +3,7 @@
   This file keeps the site lightweight: no frameworks, no external dependencies.
 */
 
-(function () {
+function initSite() {
   const currentPage = window.location.pathname.split("/").pop() || "index.html";
   initPageChrome(currentPage);
 
@@ -21,52 +21,44 @@
   const navMenu = document.querySelector("[data-nav-menu]");
 
   if (navToggle && navMenu) {
+    const setMenuOpen = (open) => {
+      navToggle.setAttribute("aria-expanded", String(open));
+      navToggle.setAttribute("aria-label", open ? "Cerrar menú" : "Abrir menú");
+      navMenu.classList.toggle("is-open", open);
+      document.body.classList.toggle("nav-open", open);
+    };
     navToggle.addEventListener("click", () => {
       const isOpen = navToggle.getAttribute("aria-expanded") === "true";
-      navToggle.setAttribute("aria-expanded", String(!isOpen));
-      navMenu.classList.toggle("is-open", !isOpen);
+      setMenuOpen(!isOpen);
     });
 
     navMenu.addEventListener("click", (event) => {
       if (event.target.closest("a")) {
-        navToggle.setAttribute("aria-expanded", "false");
-        navMenu.classList.remove("is-open");
+        setMenuOpen(false);
       }
     });
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape" && navToggle.getAttribute("aria-expanded") === "true") {
-        navToggle.setAttribute("aria-expanded", "false");
-        navMenu.classList.remove("is-open");
+        setMenuOpen(false);
         navToggle.focus();
       }
     });
     document.addEventListener("click", (event) => {
       if (!event.target.closest(".navbar")) {
-        navToggle.setAttribute("aria-expanded", "false");
-        navMenu.classList.remove("is-open");
+        setMenuOpen(false);
       }
     });
     window.matchMedia("(min-width: 941px)").addEventListener("change", () => {
-      navToggle.setAttribute("aria-expanded", "false");
-      navMenu.classList.remove("is-open");
+      setMenuOpen(false);
+    });
+    document.querySelector(".navbar").addEventListener("focusout", () => {
+      requestAnimationFrame(() => {
+        if (!document.activeElement.closest(".navbar")) setMenuOpen(false);
+      });
     });
   }
 
-  const heroVideo = document.querySelector(".hero-video");
-  if (heroVideo) {
-    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const syncVideo = () => {
-      if (motion.matches || document.hidden) heroVideo.pause();
-      else heroVideo.play().catch(() => {});
-    };
-    motion.addEventListener("change", syncVideo);
-    document.addEventListener("visibilitychange", syncVideo);
-    syncVideo();
-    heroVideo.addEventListener("error", () => {
-      heroVideo.setAttribute("hidden", "");
-    });
-  }
-
+  initHeroVideo();
   initSmoothAnchors();
   initScrollEnhancements();
   initServiceFilters();
@@ -75,7 +67,45 @@
   initProjectModals();
   initContactForm();
   initChatbot();
-})();
+}
+
+// Keep initialization separate so the validation helpers can be tested without a browser.
+if (typeof document !== "undefined") initSite();
+
+function initHeroVideo() {
+  const video = document.querySelector(".hero-video");
+  const toggle = document.querySelector("[data-video-toggle]");
+  if (!video || !toggle) return;
+  const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  let pausedByUser = motion.matches;
+  const updateControl = () => {
+    const label = video.paused ? "Reproducir video de fondo" : "Pausar video de fondo";
+    toggle.setAttribute("aria-label", label);
+    toggle.title = label;
+    toggle.dataset.paused = String(video.paused);
+  };
+  const syncVideo = () => {
+    if (pausedByUser || document.hidden) video.pause();
+    else video.play().catch(updateControl);
+    updateControl();
+  };
+  toggle.hidden = false;
+  toggle.addEventListener("click", () => {
+    pausedByUser = !video.paused;
+    syncVideo();
+  });
+  motion.addEventListener("change", () => {
+    pausedByUser = motion.matches;
+    syncVideo();
+  });
+  document.addEventListener("visibilitychange", syncVideo);
+  video.addEventListener("play", updateControl);
+  video.addEventListener("pause", updateControl);
+  const showPoster = () => { video.hidden = true; toggle.hidden = true; };
+  video.addEventListener("error", showPoster);
+  video.querySelector("source")?.addEventListener("error", showPoster);
+  syncVideo();
+}
 
 function initPageChrome(currentPage) {
   const pageName = currentPage.replace(".html", "") || "index";
@@ -389,7 +419,10 @@ function trapFocus(event, container) {
   const first = controls[0];
   const last = controls[controls.length - 1];
   if (!first) return;
-  if (event.shiftKey && (document.activeElement === first || !container.contains(document.activeElement))) {
+  if (!container.contains(document.activeElement)) {
+    event.preventDefault();
+    (event.shiftKey ? last : first).focus();
+  } else if (event.shiftKey && document.activeElement === first) {
     event.preventDefault();
     last.focus();
   } else if (!event.shiftKey && document.activeElement === last) {
@@ -410,7 +443,8 @@ function initProjectModals() {
     modal.hidden = false;
     document.body.classList.add("modal-open");
     setPageInert(true);
-    document.querySelector("[data-chatbot]").inert = true;
+    const chatbot = document.querySelector("[data-chatbot]");
+    if (chatbot) chatbot.inert = true;
     const closeButton = modal.querySelector("button[data-modal-close]");
     if (closeButton) closeButton.focus();
   }
@@ -420,7 +454,8 @@ function initProjectModals() {
     modal.hidden = true;
     document.body.classList.remove("modal-open");
     setPageInert(false);
-    document.querySelector("[data-chatbot]").inert = false;
+    const chatbot = document.querySelector("[data-chatbot]");
+    if (chatbot) chatbot.inert = false;
     if (lastFocusedElement) lastFocusedElement.focus();
   }
 
@@ -449,13 +484,19 @@ function initContactForm() {
   if (!form) return;
 
   const status = form.querySelector("[data-form-status]");
-  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const preview = form.querySelector("[data-query-preview]");
   const output = form.querySelector("[data-query-text]");
   const clearPrompt = form.querySelector("[data-clear-confirm]");
   const clearButton = form.querySelector("[data-clear-draft]");
   const cancelClear = form.querySelector("[data-cancel-clear]");
   const keys = ["company", "timeline", "name", "email", "service", "location", "subject", "message"];
+  let submitted = false;
+  const readValues = () => Object.fromEntries(keys.map((key) => [key, form.elements[key].value.trim()]));
+  const saveDraft = () => {
+    try {
+      sessionStorage.setItem("civiltelecom-query", JSON.stringify(Object.fromEntries(keys.map((key) => [key, form.elements[key].value]))));
+    } catch { /* Retain values in the form if storage is disabled. */ }
+  };
   const selectedService = new URLSearchParams(location.search).get("servicio");
   try {
     const saved = JSON.parse(sessionStorage.getItem("civiltelecom-query") || "null");
@@ -465,16 +506,24 @@ function initContactForm() {
   } catch { /* The form also works when browser storage is unavailable. */ }
   if (["civil", "fibra", "antenas", "mantenimiento"].includes(selectedService)) {
     form.elements.service.value = selectedService;
+    saveDraft();
+    // Consume the incoming choice once; reloading must not overwrite later edits.
+    const url = new URL(window.location.href);
+    url.searchParams.delete("servicio");
+    try { window.history.replaceState(null, "", url.href); } catch { /* Some file previews restrict history. */ }
   }
-  form.addEventListener("input", () => {
+  form.querySelector('button[type="submit"]').disabled = false;
+  const updateDraft = () => {
     clearPrompt.hidden = true;
     clearButton.setAttribute("aria-expanded", "false");
     preview.hidden = true;
+    output.value = "";
     status.textContent = "";
-    try {
-      sessionStorage.setItem("civiltelecom-query", JSON.stringify(Object.fromEntries(keys.map((key) => [key, form.elements[key].value]))));
-    } catch { /* Retain values in the form if storage is disabled. */ }
-  });
+    if (submitted) showFormErrors(form, validateContactValues(readValues()));
+    saveDraft();
+  };
+  form.addEventListener("input", updateDraft);
+  form.addEventListener("change", updateDraft);
   form.querySelector("[data-copy-query]").addEventListener("click", async () => {
     try {
       await navigator.clipboard.writeText(output.value);
@@ -501,6 +550,7 @@ function initContactForm() {
   });
   form.querySelector("[data-confirm-clear]").addEventListener("click", () => {
     form.reset();
+    submitted = false;
     clearPrompt.hidden = true;
     clearButton.setAttribute("aria-expanded", "false");
     output.value = "";
@@ -515,19 +565,12 @@ function initContactForm() {
     event.preventDefault();
     clearPrompt.hidden = true;
     clearButton.setAttribute("aria-expanded", "false");
-    const formData = new FormData(form);
-    const values = {
-      name: String(formData.get("name") || "").trim(),
-      email: String(formData.get("email") || "").trim(),
-      subject: String(formData.get("subject") || "").trim(),
-      message: String(formData.get("message") || "").trim()
-    };
-
-    const errors = {};
-    if (values.name.length < 2) errors.name = "Ingresa tu nombre.";
-    if (!emailPattern.test(values.email)) errors.email = "Ingresa un correo válido.";
-    if (values.subject.length < 4) errors.subject = "Indica un asunto más específico.";
-    if (values.message.length < 12) errors.message = "El mensaje debe tener al menos 12 caracteres.";
+    submitted = true;
+    const values = readValues();
+    const errors = validateContactValues(values);
+    preview.hidden = true;
+    output.value = "";
+    saveDraft();
 
     showFormErrors(form, errors);
 
@@ -551,6 +594,16 @@ function initContactForm() {
   });
 }
 
+function validateContactValues(values) {
+  const errors = {};
+  const value = (key) => String(values[key] || "").trim();
+  if (value("name").length < 2) errors.name = "Ingresa tu nombre.";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value("email"))) errors.email = "Ingresa un correo válido.";
+  if (value("subject").length < 4) errors.subject = "Indica un asunto más específico.";
+  if (value("message").length < 12) errors.message = "El mensaje debe tener al menos 12 caracteres.";
+  return errors;
+}
+
 function showFormErrors(form, errors) {
   const fields = form.querySelectorAll(".form-field");
   fields.forEach((field) => {
@@ -562,13 +615,12 @@ function showFormErrors(form, errors) {
     field.classList.toggle("has-error", Boolean(message));
     error.textContent = message;
     control.setAttribute("aria-invalid", String(Boolean(message)));
-    if (message) {
-      const errorId = `${control.id}-error`;
-      error.id = errorId;
-      control.setAttribute("aria-describedby", errorId);
-    } else {
-      control.removeAttribute("aria-describedby");
-    }
+    const errorId = `${control.id}-error`;
+    error.id = errorId;
+    const descriptions = (control.getAttribute("aria-describedby") || "").split(/\s+/).filter((id) => id && id !== errorId);
+    if (message) descriptions.push(errorId);
+    if (descriptions.length) control.setAttribute("aria-describedby", descriptions.join(" "));
+    else control.removeAttribute("aria-describedby");
   });
 }
 
@@ -632,6 +684,7 @@ function initChatbot() {
       button.addEventListener("click", () => {
         answer(question);
         if (guideStep === 2 || guideStep === 3) input.focus({ preventScroll: true });
+        else if (!button.isConnected) quickActions.querySelector("button")?.focus({ preventScroll: true });
       });
       quickActions.appendChild(button);
     });
@@ -653,7 +706,7 @@ function initChatbot() {
 
   function answer(question) {
     addMessage(question, "user");
-    if (normalizeText(question) === "cancelar guia") {
+    if (normalizeText(question).trim() === "cancelar guia") {
       guideStep = 0;
       showQuestions(quickQuestions);
       addMessage("Guía cancelada. Puedes consultar otro tema cuando quieras.");
@@ -678,6 +731,7 @@ function initChatbot() {
     }
     if (guideStep === 2) {
       if (question.length < 2) { addMessage("Indica una ciudad o ruta para ubicar el proyecto."); return; }
+      if (question.length > 200) { addMessage("Resume la ubicación en un máximo de 200 caracteres. Podrás ampliar los detalles en el alcance."); return; }
       brief.location = question;
       guideStep = 3;
       addMessage("3 de 3. Describe el alcance y el plazo deseado. Por ejemplo: ampliar una ruta existente, con planos disponibles y ejecución planificada.");

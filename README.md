@@ -47,8 +47,11 @@ Las imagenes JPG de `assets/images/` estan preparadas a 1920x1080 y optimizadas 
 
 ```bash
 node --check assets/js/main.js
+node --test tests/interactions.test.cjs
 python3 tests/check_site.py
 python3 tests/check_site.py --url http://127.0.0.1:8000
 ```
 
 La ultima comprobacion necesita el servidor local activo. Para cambios de interfaz, revisar las cinco paginas a 1440, 768, 390 y 320 px, la navegacion movil, los filtros, el modal de proyecto y la transferencia Mateo-formulario.
+
+Comprobar también que el servicio elegido se conserve al recargar Contacto, que los errores desaparezcan al corregir los campos y que el menú en orientación horizontal no quede cubierto por Mateo. El video de inicio dispone de pausa manual y respeta la preferencia de movimiento reducido.
