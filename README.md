@@ -1,6 +1,18 @@
-# CIVILTELECOM S.R.L. sitio estatico
+# CIVILTELECOM S.R.L. | Proyecto de portafolio
+
+CIVILTELECOM S.R.L. me contrató para diseñar y desarrollar su sitio web corporativo. Este proyecto forma parte de mi portafolio como desarrollador web.
+
+**Desarrollo:** [juanda832](https://github.com/juanda832).
+
+**Sitio web:** [Ver el proyecto publicado](https://juanda832.github.io/civiltelecom/).
+
+## Sobre el proyecto
 
 Sitio corporativo multipagina para CIVILTELECOM S.R.L., empresa boliviana creada en 2015, con experiencia de trabajo junto a ENTEL y disponibilidad para proyectos a lo largo de toda Bolivia. Esta construido solo con HTML5, CSS3 y JavaScript puro.
+
+El trabajo incluye cinco páginas enlazadas, diseño responsive, galerías de servicios, portafolio de proyectos, navegación accesible y el asistente de demostración Mateo. Las imágenes generadas con IA son ilustrativas y no se presentan como fotografías documentales de obras o integrantes reales de la empresa.
+
+La versión publicada es una muestra del proyecto: los datos de contacto oficiales están pendientes y el formulario prepara un resumen, pero todavía no envía solicitudes.
 
 ## Ejecutar localmente
 
