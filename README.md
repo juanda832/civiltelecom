@@ -1,6 +1,6 @@
 # CIVILTELECOM S.R.L. | Proyecto de portafolio
 
-CIVILTELECOM S.R.L. me contrató para diseñar y desarrollar su sitio web corporativo. Este proyecto forma parte de mi portafolio como desarrollador web.
+CIVILTELECOM S.R.L. me contrató para diseñar y desarrollar su sitio web corporativo. El proyecto demuestra mis habilidades de desarrollo frontend: transformar las necesidades de una empresa de telecomunicaciones en una experiencia web responsive, con navegación accesible, funciones interactivas y publicación en GitHub Pages.
 
 **Desarrollo:** [juanda832](https://github.com/juanda832).
 
@@ -13,6 +13,18 @@ Sitio corporativo multipagina para CIVILTELECOM S.R.L., empresa boliviana creada
 El trabajo incluye cinco páginas enlazadas, diseño responsive, galerías de servicios, portafolio de proyectos, navegación accesible y el asistente de demostración Mateo. Las imágenes generadas con IA son ilustrativas y no se presentan como fotografías documentales de obras o integrantes reales de la empresa.
 
 La versión publicada es una muestra del proyecto: los datos de contacto oficiales están pendientes y el formulario prepara un resumen, pero todavía no envía solicitudes.
+
+## Mi aporte técnico
+
+- **Desarrollo frontend:** construcción de cinco páginas enlazadas con HTML5 semántico, CSS3 y JavaScript puro, sin frameworks ni dependencias de ejecución.
+- **Diseño responsive y accesibilidad:** adaptación a escritorio, tablet y móvil; navegación con teclado, gestión del foco, etiquetas accesibles y respeto por la preferencia de movimiento reducido.
+- **Interacciones:** filtros de servicios, ventanas de detalle de proyectos, validación de formularios, conservación de borradores y un asistente de demostración con respuestas locales.
+- **Calidad y mantenimiento:** ocho pruebas automatizadas de JavaScript, comprobaciones de enlaces y recursos, y revisión de las cinco páginas en cuatro tamaños de pantalla.
+- **Publicación:** control de versiones con Git y GitHub, despliegue mediante GitHub Pages y verificación de los recursos publicados.
+
+## Resumen para currículum
+
+> Desarrollé por encargo el sitio corporativo multipágina de CIVILTELECOM S.R.L. con HTML5, CSS3 y JavaScript puro. Implementé diseño responsive, mejoras de accesibilidad, validación de formularios e interacciones de usuario; incorporé pruebas automatizadas y publiqué el proyecto en GitHub Pages.
 
 ## Ejecutar localmente
 
